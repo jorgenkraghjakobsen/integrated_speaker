@@ -1,0 +1,52 @@
+[Device]
+Family=machxo2
+PartType=LCMXO2-1200HC
+PartName=LCMXO2-1200HC-4SG32C
+SpeedGrade=4
+Package=QFN32
+OperatingCondition=COM
+Status=S
+
+[IP]
+VendorName=Lattice Semiconductor Corporation
+CoreType=LPM
+CoreStatus=Demo
+CoreName=ROM
+CoreRevision=5.4
+ModuleName=sine_rom
+SourceFormat=Verilog HDL
+ParameterFileVersion=1.0
+Date=01/08/2020
+Time=10:36:46
+
+[Parameters]
+Verilog=1
+VHDL=0
+EDIF=1
+Destination=Synplicity
+Expression=BusA(0 to 7)
+Order=Big Endian [MSB:LSB]
+IO=0
+Address=128
+Data=16
+enByte=0
+ByteSize=9
+OutputEn=1
+ClockEn=0
+Optimization=Speed
+Reset=Sync
+Reset1=Sync
+Init=0
+MemFile=/home/jkj/work/fpga_ate_ma120_eagle/hdl/sinetable/rom_sine_table.hex
+MemFormat=hex
+EnECC=0
+Pipeline=0
+Write=Normal
+init_data=0
+no_init=0
+
+[FilesGenerated]
+/home/jkj/work/fpga_ate_ma120_eagle/hdl/sinetable/rom_sine_table.hex=mem
+
+[Command]
+cmd_line= -w -n sine_rom -lang verilog -synth lse -bus_exp 7 -bb -arch xo2c00 -type romblk -device LCMXO2-1200HC -addr_width 7 -data_width 16 -num_words 128 -outdata REGISTERED -cascade -1 -resetmode SYNC -sync_reset -memfile "/home/jkj/work/fpga_ate_ma120_eagle/hdl/sinetable/rom_sine_table.hex" -memformat hex

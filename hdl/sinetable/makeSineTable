@@ -1,0 +1,34 @@
+#!/usr/bin/perl 
+
+use Math::Trig;
+
+# Generate sine table for fpga i2s tone generator 
+# Parameter 
+# sinetable <n> <bits> 
+#    n    : Length of sine table 
+#    bits : Number of bits/resolusion 
+
+$narg = $#ARGV + 1; 
+
+if ($narg == 2) { 
+  $bits = $ARGV[1];
+  $n    = $ARGV[0];
+} elsif ($narg == 1) { 
+  $bits = 16;
+  $n    = $ARGV[0];
+} else { 
+  $bits = 16;
+  $n    = 128;
+}
+
+printf("# Generated sine table \n");
+printf("# Length    : %d\n",$n);
+printf("# bits      : %d\n",$bits);
+
+for ($i = 0; $i < $n; $i++ )
+{ $yf = sin($i/$n * 2.0*pi);
+  $yi = 0x7fff*$yf; 
+  #printf("%d %04hx %f\n",$i, $yi, $yf );
+  printf("%04hx\n",$yi);
+}
+

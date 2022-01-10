@@ -1,0 +1,40 @@
+#!/usr/bin/perl 
+
+
+$fname = $ARGV[0];
+printf("Fname : %s\n",$fname);
+
+open(FH, '<', $fname) or die $!;
+
+while(<FH>)
+{ #print $_;
+  @l = split(/,/);
+  if ($l[0] =~ /Pin Out For/) { next; } 
+  if ($l[0] =~ /FNC/) { next; } 
+  if ($l[5] =~ /-/ ) { next; } 
+   
+  $pin_name  = $l[0];
+  $pin_xy    = $l[5]; 
+
+  $pin_alfa  = ord(substr($pin_xy, 0, 1))-0x41 ; 
+
+  $pin_num   = ord(substr($pin_xy, 1, 1))-0x30 ;   
+
+  $pin_index = ($pin_num-1) * 6 + $pin_alfa;
+  $pin[$pin_index] = $pin_name; 
+  printf("%d %d %s %s \n",$pin_alfa, $pin_num,$pin_xy,$pin_name); 
+}  
+
+printf("\n\n\n");
+
+for ($x = 5; $x >= 0; $x--) 
+{ for ($y = 0 ; $y < 6; $y++ ) 
+  {  printf("  %-*s  ",14,$pin[$x*6 + $y]); 
+  } 
+  printf("\n\n\n");     
+}
+
+
+close(FH); 
+
+
