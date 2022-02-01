@@ -2,8 +2,8 @@
 BASEDIR=$(shell pwd)
 # TARGET : fpga_xo2 | sky130 | sim
 
-TARGET=fpga_xo2
-#TARGET=sky130
+#TARGET=fpga_xo2
+TARGET=sky130
 
 
 # Project settings 
