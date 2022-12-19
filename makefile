@@ -2,13 +2,10 @@
 BASEDIR=$(shell pwd)
 # TARGET : fpga_xo2_open_tools | fpga_xo2 | sky130 | sim
 
-TARGET=fpga_xo2
+#TARGET=fpga_xo2
 
-#TARGET=fpga_xo2_open_tools
-
-
+TARGET=fpga_xo2_open_tools
 #TARGET=sky130
-
 
 # Project settings 
 PROJ=amp_frontend
