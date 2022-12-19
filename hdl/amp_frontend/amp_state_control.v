@@ -40,7 +40,7 @@ module amp_state_control (
     if (!resetb) 
     begin
       amp_state_reg <= INIT_ST; 
-      //amp_state_next <= INIT_ST;
+      amp_state_next <= INIT_ST;
     end
     else 
       amp_state_reg <= amp_state_next; 

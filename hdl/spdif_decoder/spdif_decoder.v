@@ -60,7 +60,7 @@ module spdif_decoder ( input clk_in,
       ws_old_reg  <= 1'b0;
       phase_reg   <= 1'b0;
       i2s_bck_reg <= 1'b0;
-      //i2s_bck_next  <= 1'b0; 
+      i2s_bck_next  <= 1'b0; 
       bckcnt      <= 8'h00;
       bitcnt      <= 8'h00;
       bitlength   <= 8'h00;
