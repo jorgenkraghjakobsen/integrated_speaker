@@ -25,7 +25,7 @@ module amp_i2s_interface (
     
     
     //reg [31:0] rx_reg;
-    always @(posedge clk , negedge resetb) 
+    always @(posedge clk) 
      begin
        if (!resetb) 
        begin

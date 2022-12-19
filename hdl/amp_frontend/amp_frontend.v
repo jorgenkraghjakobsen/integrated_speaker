@@ -7,23 +7,33 @@ module amp_frontend (
     `ifdef SIM
      //input clk,
     `endif
+    (* LOC="4" *)
     input resetb, 
     
+    (* LOC="12" *)
     input rx_in, 
     
+    (* LOC="5" *)
     input nerror_in,
-    input nclip_in,
     
+    (* LOC="13" *)
     output i2s_bck, 
+    (* LOC="14" *)
     output i2s_ws,
+    (* LOC="16" *)
     output i2s_d0, 
 
+    (* LOC="27" *)
     inout i2c_sda, 
+    (* LOC="28" *)
     inout i2c_scl, 
    
+    (* LOC="10" *)
     output rx_out,
     
+    (* LOC="25" *)
     output nenable_out, 
+    (* LOC="26" *)
     output nmute_out);  
     //output clk_out);
 
@@ -43,22 +53,25 @@ module amp_frontend (
     wire clk_osc ; 
     `ifndef FPGA 
        OSCH #(
-         .NOM_FREQ("12.09")      //3.02
+         .NOM_FREQ("53.2")  ////88.67") //53.2 // 12.09 //3.02
        ) int_clk (
          .STDBY(1'b0),
-         .OSC(clk_osc)
+         .OSC(clk)
        ); 
-       GSR GSR_INST (.GSR(resetb));
-       PUR #(.RST_PULSE(100)) int_pur (.PUR(resetb));
        
-       pll_x4 pll (clk_osc, clk); 
+       //GSR GSR_INST (.GSR(resetb));
+       
+       //PUR #(.RST_PULSE(100)) int_pur (.PUR(resetb));
+       
+       //pll_x4 pll (clk_osc, clk); 
     
     `endif  
     
     wire audio_locked;
     wire send_config;
     wire rx_out_tmp;
-
+    wire i2s_bck_tmp, i2s_ws_tmp, i2s_d0_tmp; 
+    
     spdif_decoder spdif(
       .clk_in(clk),
       .resetb(resetb),
@@ -66,16 +79,17 @@ module amp_frontend (
       .i2s_bck(i2s_bck_tmp),
       .i2s_ws(i2s_ws_tmp),
       .i2s_d0(i2s_d0_tmp),
+      .audio_locked(audio_locked),
       .edgedetect(rx_out_tmp)); 
 
-    amp_i2s_interface i2s (
-        .clk_in(clk),
-        .resetb(resetb),
-        .rx_in(rx_in),
+    //amp_i2s_interface i2s (
+    //    .clk_in(clk),
+    //    .resetb(resetb),
+    //    .rx_in(rx_in),
         //.i2s_bck(i2s_bck_tmp),
         //.i2s_ws(i2s_ws_tmp),
         //.i2s_d0(i2s_d0_tmp),
-        .audio_locked(audio_locked)); 
+    //    .audio_locked(audio_locked)); 
 
    // assign i2s_bck = clk;
     assign i2s_d0 = i2s_d0_tmp & nmute_out;

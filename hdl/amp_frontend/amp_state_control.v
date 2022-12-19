@@ -35,10 +35,13 @@ module amp_state_control (
 
   reg [3:0] amp_state_reg,  amp_state_next; 
   
-  always @(posedge clk_in , negedge resetb)
+  always @(posedge clk_in)
   begin 
     if (!resetb) 
+    begin
       amp_state_reg <= INIT_ST; 
+      //amp_state_next <= INIT_ST;
+    end
     else 
       amp_state_reg <= amp_state_next; 
   end 

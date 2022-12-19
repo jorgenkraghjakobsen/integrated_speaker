@@ -1,9 +1,29 @@
+// Simple hardcoded I2C interface for Merus Gen1 amps 
+// 
+// On send_config asserted the module will send the i2c 
+// command stored in bootmem
+
+// The bootmem program is constructed from following 4 opcodes:
+//    Opcode      [Arguments]  :  Function    
+// -------------------------------------------------------------------------------
+// 8'b0xxx_xxxx  8'byyyy_yyyy  :  Write single byte yyyy_yyyy to address xxx_xxxx 
+//                             :  at given page  
+// 8'b10xx_xxxx                :  Set page xx_xxxx << 7      
+// 8'b110x_xxxx  8'byyyy_yyyy  :  Block write x_xxxx bytes to address yyyy_yyyy 
+//               8'bzzzz_zzzz  :  
+// 0'b1111_1111                :  End of data
+// -------------------------------------------------------------------------------
+
+// Written by Jørgen Kragh Jakobsen, IC Works 
+// Copyright 2022
+
 module amp_i2c_master (
     input clk_in,
     input resetb, 
     input send_cfg, 
     inout sda, 
     inout scl); 
+parameter DIV = 5; 
 
     reg [7:0] bootmem [7:0]; 
 initial begin
@@ -34,8 +54,7 @@ end
         DONE_ST                = 13; 
 
    wire clk; 
-   //assign clk = clk_in;
-   clk_div div(clk_in,resetb,clk);   
+   clk_div #(.DIV(5)) div (clk_in,resetb,clk);
 
    wire [7:0] opcode; 
    reg [2:0] boot_index, boot_next; 
@@ -45,7 +64,6 @@ end
    reg i2c_scl, i2c_scl_next;
    reg i2c_sda, i2c_sda_next;  
   
-   //wire sda_low = sda_set_low | sda_set_ACK;  
    assign sda = !i2c_sda ? 1'b0 : 1'bz; 
    assign scl = !i2c_scl ? 1'b0 : 1'bz;  
 
@@ -54,14 +72,12 @@ end
 
    assign opcode = bootmem[boot_index];  
   
-   always @(posedge clk , negedge resetb) 
+   always @(posedge clk) 
     begin
     if (!resetb) 
     begin
       state_reg  <= INIT_ST; 
-   //   offset_reg <= 6'h00;
       boot_index <= 3'b000;
-      //boot_next  <= 3'b000;
       i2c_cnt    <= 6'b000000;
       i2c_scl    <= 1;
       i2c_sda    <= 1;
@@ -71,13 +87,12 @@ end
       state_reg <= next_reg; 
       i2c_cnt   <= next_cnt;
       boot_index <= boot_next; 
-    i2c_scl  <= i2c_scl_next; 
+      i2c_scl  <= i2c_scl_next; 
       i2c_sda  <= i2c_sda_next; 
-    
     end
    end
    
-   always @* //state_reg,send_cfg, i2c_cnt)  
+   always @* 
    begin
     boot_next = boot_index;   
     next_reg = state_reg;
@@ -85,14 +100,12 @@ end
     i2c_scl_next  = i2c_scl;
     i2c_sda_next  = i2c_sda;
      
-    
     case (state_reg) 
       INIT_ST:
         begin
             boot_next   = 3'b0;  
             i2c_sda_next      = 1; 
             i2c_scl_next      = 1;
-            //offset_reg   = 6'h00; 
             next_reg     =  WAIT_TRIGGER_ST; 
         end 
       WAIT_TRIGGER_ST: 
@@ -100,7 +113,6 @@ end
             boot_next   = 3'b0;  
             i2c_sda_next      = 1; 
             i2c_scl_next      = 1; 
-            //offset_reg   = 6'h00; 
             if (send_cfg) 
                 next_reg  = LOAD_CMD_ST; 
         end     
@@ -116,7 +128,6 @@ end
             end
            else if (opcode[7:6] == 2'b10) 
            begin
-             //offset_reg  = opcode[5:0];
              boot_next  = boot_index + 3'h1; 
              next_reg    = LOAD_CMD_ST; 
            end
@@ -181,16 +192,14 @@ end
              i2c_scl_next = 1;
           else if(i2c_cnt[1:0] == 2'b11)
              i2c_scl_next = 0;
-             
-          
         end   
         
       LOAD_DATA_ST: 
       begin 
           next_reg      = SEND_DATA_ST; 
           next_cnt      = 20;
-   
       end       
+
       SEND_DATA_ST:
       begin
           if (i2c_cnt == 0) 
@@ -213,8 +222,7 @@ end
              i2c_scl_next = 1;
           else if(i2c_cnt[1:0] == 2'b11)
              i2c_scl_next = 0;
-          
-        end   
+      end   
 
       SEND_I2C_STOP_ST:
       begin

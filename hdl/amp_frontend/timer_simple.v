@@ -9,7 +9,7 @@ module timer_simple(
    reg timer_state_run;
    assign timer_timeout = (counter_reg == RELOAD_VAL) ?1'b1:1'b0; 
    
-   always @(posedge clk_in , negedge resetb)
+   always @(posedge clk_in)
    begin
        if (!resetb)
        begin 

@@ -1,9 +1,13 @@
 
 BASEDIR=$(shell pwd)
-# TARGET : fpga_xo2 | sky130 | sim
+# TARGET : fpga_xo2_open_tools | fpga_xo2 | sky130 | sim
 
-#TARGET=fpga_xo2
-TARGET=sky130
+TARGET=fpga_xo2
+
+#TARGET=fpga_xo2_open_tools
+
+
+#TARGET=sky130
 
 
 # Project settings 
@@ -12,7 +16,7 @@ TOP=amp_frontend
 
 ## Walk all verilog files in a given directory
 SOURCEDIR = hdl/amp_frontend
-SRC := $(shell ls $(SOURCEDIR)/*.v) 
+SRC := $(shell ls $(PWD)/$(SOURCEDIR)/*.v) 
 
 ifeq ($(TARGET),fpga_xo2)
   FAM=MachXO2
@@ -21,6 +25,7 @@ ifeq ($(TARGET),fpga_xo2)
   PKG=QFN32
   SPEED=5
 endif
+
 ifeq ($(TARGET),sky130)
   STD_CELL_LIBRARY=sky130_fd_sc_hd
   PDK_ROOT=/OpenLane/home/jakobsen/work/opentools/open_pdks/sky130/
@@ -32,7 +37,36 @@ OBJ=obj/hdl/$(TOP)/$(TARGET)
 
 ifeq ($(TARGET),sky130)
 all:
-	echo "SRC: " $(SRC)
+	synth 
+
+synth:
+	mkdir -p $(OBJ) ;\
+	cd $(OBJ) ;\
+	echo "read_verilog $(SRC)" > $(PROJ)_yosys.cmd ;\
+    echo "read_verilog -lib /home/jakobsen/work/opentools/open_pdks/sky130/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v " >> $(PROJ)_yosys.cmd ;\
+	echo "proc;;" >>  $(PROJ)_yosys.cmd ;\
+	echo "memory;;" >>  $(PROJ)_yosys.cmd ;\
+	echo "techmap;;" >>  $(PROJ)_yosys.cmd ;\
+    echo "dfflibmap -liberty /home/jakobsen/work/opentools/open_pdks/sky130/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib "  >>  $(PROJ)_yosys.cmd ;\
+	echo "abc -liberty /home/jakobsen/work/opentools/open_pdks/sky130/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib "  >>  $(PROJ)_yosys.cmd ;\
+	echo "write_verilog $(PROJ)_synth.v " >> $(PROJ)_yosys.cmd ;\
+	yosys -s $(PROJ)_yosys.cmd 
+
+openroad:
+	cd $(OBJ) ;\
+	echo "source /home/jakobsen/work/opentools/OpenROAD/test/helpers.tcl" > $(PROJ)_sky130hd.tcl ;\
+	echo "source /home/jakobsen/work/opentools/OpenROAD/test/flow_helpers.tcl" >> $(PROJ)_sky130hd.tcl ;\
+	echo "source /home/jakobsen/work/asic/integrated_speaker/sky130hd/sky130hd.vars" >> $(PROJ)_sky130hd.tcl ;\
+	echo "set global_place_density 0.99" >> $(PROJ)_sky130hd.tcl ;\
+	echo "set global_place_utilization 35" >> $(PROJ)_sky130hd.tcl ;\
+	echo "set global_place_aspect 0.8" >> $(PROJ)_sky130hd.tcl ;\
+	echo "set synth_verilog $(PROJ)_synth.v" >> $(PROJ)_sky130hd.tcl ;\
+	echo "set design amp_frontend" >> $(PROJ)_sky130hd.tcl ;\
+	echo "set core_area {0.1 0.1 150.0 150.0}" >> $(PROJ)_sky130hd.tcl ;\
+	echo "set core_area {0.0 0.0 150.1 150.1}" >> $(PROJ)_sky130hd.tcl ;\
+	echo "source -echo \"/home/jakobsen/work/opentools/OpenROAD/test/flow.tcl\"" >> $(PROJ)_sky130hd.tcl ;\
+	openroad $(PROJ)_sky130hd.tcl
+
 endif 
 
 
@@ -47,7 +81,7 @@ ISPFPGA=/usr/local/diamond/3.12/ispfpga/bin/lin64
 PRGFPGA=/usr/local/programmer/diamond/3.12/bin/lin64
 
 clean :
-	rm $(OBJ)/hdl/$(TOP)/$(TARGET)/*
+	rm -rf $(OBJ)/*
 	
 all : synth map pnr bitgen 
         
@@ -130,3 +164,53 @@ flash :
 	$(PRGFPGA)/pgrcmd -infile program_flow.xcf \
 	-cabletype USB2 -portaddress FTUSB-0 
 endif
+
+ifeq ($(TARGET),fpga_xo2_open_tools)
+##################################################################################
+# FPGA Lattice machXO2 using open tools 
+# yosys - nextpnr-machxo2 - ecppack - openfpgaloader 
+
+clean :
+	rm -rf $(OBJ)/*
+	
+all : synth pnr pack prog 
+
+synth : yosys_$(PROJ).ys
+	mkdir -p $(OBJ) ;\
+	cd $(OBJ) ;\
+	yosys yosys_$(PROJ).ys 
+
+yosys_$(PROJ).ys:
+	mkdir -p $(OBJ) ;\
+	printf "#auto generated yosys script \n\
+	read_verilog $(HDL)/$(PROJ)/amp_frontend.v \n\
+	read_verilog $(HDL)/$(PROJ)/amp_state_control.v \n\
+	read_verilog $(HDL)/$(PROJ)/amp_i2c_master.v \n\
+	read_verilog $(HDL)/$(PROJ)/clk_div.v \n\
+	read_verilog $(HDL)/$(PROJ)/timer_simple.v \n\
+	#read_verilog $(HDL)/sinetable/rom_sine.v \n\
+	read_verilog $(HDL)/$(PROJ)/amp_i2s_interface.v \n\
+	read_verilog $(HDL)/spdif_decoder/spdif_decoder.v \n\
+    #read_verilog $(HDL)/pll_x4.v \n\
+	hierarchy -top amp_frontend -libdir .\n\
+	synth_machxo2 -json $(PROJ).json \n\
+	#shell \n\
+	" > $(OBJ)/$@ 
+		
+pnr: 
+	cd $(OBJ) ;\
+	nextpnr-machxo2 --1200 --package QFN32 --json $(PROJ).json \
+	--write $(PROJ)_pnr.json --textcfg $(PROJ)_pnr.txt
+
+pack:
+	cd $(OBJ) ;\
+	ecppack $(PROJ)_pnr.txt $(PROJ)_pnr.bit
+
+prog:
+	cd $(OBJ) ;\
+	openFPGALoader -c ft2232 $(PROJ)_pnr.bit
+endif
+
+
+
+
