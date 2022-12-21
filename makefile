@@ -206,6 +206,10 @@ pack:
 prog:
 	cd $(OBJ) ;\
 	openFPGALoader -c ft2232 $(PROJ)_pnr.bit
+	
+flash:	
+	cd $(OBJ) ;\
+	openFPGALoader -c ft2232 -f $(PROJ)_pnr.bit	 	
 endif
 
 

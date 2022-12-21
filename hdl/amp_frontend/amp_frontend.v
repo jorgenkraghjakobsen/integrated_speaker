@@ -59,6 +59,7 @@ module amp_frontend (
          .OSC(clk)
        ); 
        
+       //POR POR_inst (.POR(1'b0)); 
        //GSR GSR_INST (.GSR(resetb));
        
        //PUR #(.RST_PULSE(100)) int_pur (.PUR(resetb));
